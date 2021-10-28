@@ -10,5 +10,5 @@ import com.springboot.thymeleaf.crud.entity.Employee;
 @Repository
 public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
-	List<Employee> findByName(String name);
+	//List<Employee> findByName(String name);
 }
