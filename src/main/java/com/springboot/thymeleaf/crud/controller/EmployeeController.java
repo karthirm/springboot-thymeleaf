@@ -1,83 +1,105 @@
 package com.springboot.thymeleaf.crud.controller;
 
-import javax.validation.Valid;
+import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.springboot.thymeleaf.crud.entity.Employee;
-import com.springboot.thymeleaf.crud.repository.EmployeeRepository;
+import com.springboot.thymeleaf.crud.service.EmployeeService;
 
 @Controller
-@RequestMapping("/employees/")
+@RequestMapping("/employees")
 public class EmployeeController {
 
-	@Autowired
-	private EmployeeRepository employeeRepository;
+	private EmployeeService employeeService;
 	
-	@GetMapping("showForm")
-	public String showStudentForm() {
-		return "add-employee";
+	public EmployeeController(EmployeeService theEmployeeService) {
+		employeeService = theEmployeeService;
 	}
 	
-	@GetMapping("list")
-	public String employees(Model model) {
-		model.addAttribute("employees", this.employeeRepository.findAll());
-		return "index";
+	// add mapping for "/list"
+
+	@GetMapping("/list")
+	public String listEmployees(Model theModel) {
+		
+		// get employees from db
+		List<Employee> theEmployees = employeeService.findAll();
+		
+		// add to the spring model
+		theModel.addAttribute("employees", theEmployees);
+		
+		return "employees/list-employees";
 	}
 	
-	@PostMapping("add")
-	public String addEmployee(@Valid Employee employee, BindingResult result, Model model) {
-		if(result.hasErrors()) {
-			return "add-employee";
-		}
+	@GetMapping("/showFormForAdd")
+	public String showFormForAdd(Model theModel) {
 		
-		this.employeeRepository.save(employee);
-		return "redirect:list";
+		// create model attribute to bind form data
+		Employee theEmployee = new Employee();
+		
+		theModel.addAttribute("employee", theEmployee);
+		
+		return "employees/employee-form";
+	}
+
+	@GetMapping("/showFormForUpdate")
+	public String showFormForUpdate(@RequestParam("employeeId") int theId,
+									Model theModel) {
+		
+		// get the employee from the service
+		Employee theEmployee = employeeService.findById(theId);
+		
+		// set employee as a model attribute to pre-populate the form
+		theModel.addAttribute("employee", theEmployee);
+		
+		// send over to our form
+		return "employees/employee-form";			
 	}
 	
-	@GetMapping("/edit/{id}")
-	public String showUpdateForm(@PathVariable("id") long id, Model model) {
-		Employee employee = this.employeeRepository.findById(id)
-				.orElseThrow(() -> new IllegalArgumentException("Invalid employee id :"+ id));
+	
+	@PostMapping("/save")
+	public String saveEmployee(@ModelAttribute("employee") Employee theEmployee) {
 		
-		model.addAttribute("employee", employee);
-		return "update-employee";
+		// save the employee
+		employeeService.save(theEmployee);
+		
+		// use a redirect to prevent duplicate submissions
+		return "redirect:/employees/list";
 	}
 	
-	@GetMapping("/update{id}")
-	public String updateEmployee(@PathVariable("id") long id, @Valid Employee employee, 
-									BindingResult result, Model model) {
-		
-		if(result.hasErrors()) {
-			employee.setId(id);
-			return "update-employee";
-		}
-		
-		//update employee
-		employeeRepository.save(employee);
-		
-		//get all employees
-		model.addAttribute("employees", this.employeeRepository.findAll());
-		return "index";	
-	}
 	
-	@DeleteMapping("/delete/{id")
-	public String deleteEmployee(@PathVariable ("id") long id, Model model) {
+	@GetMapping("/delete")
+	public String delete(@RequestParam("employeeId") int theId) {
 		
-		Employee employee = this.employeeRepository.findById(id)
-				.orElseThrow(() -> new IllegalArgumentException("Invalid employee id :"+ id));
+		// delete the employee
+		employeeService.deleteById(theId);
 		
-		this.employeeRepository.delete(employee);
-		model.addAttribute("employees", this.employeeRepository.findAll());
-		return "index";
+		// redirect to /employees/list
+		return "redirect:/employees/list";
+		
 	}
-	
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
